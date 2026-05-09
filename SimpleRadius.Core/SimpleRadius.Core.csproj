@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>SimpleRadius.Core</AssemblyName>
+    <RootNamespace>SimpleRadius.Core</RootNamespace>
+  </PropertyGroup>
+
+  <!-- No external NuGet packages — logging is handled via a simple built-in interface -->
+
+</Project>

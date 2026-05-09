@@ -1,0 +1,8 @@
+bin/
+obj/
+*.user
+.vs/
+data/
+publish/
+*.suo
+.DS_Store
