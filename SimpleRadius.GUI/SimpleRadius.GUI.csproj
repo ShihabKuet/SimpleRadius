@@ -8,8 +8,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>SimpleRadius</AssemblyName>
     <RootNamespace>SimpleRadius.GUI</RootNamespace>
+    <ApplicationIcon>Resources\app.ico</ApplicationIcon>
     <StartupObject>SimpleRadius.GUI.App</StartupObject>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Embed icon as a resource so it can be used in XAML at runtime -->
+    <Resource Include="Resources\app.ico"/>
+    <Resource Include="Resources\app.png"/>
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SimpleRadius.Core\SimpleRadius.Core.csproj" />

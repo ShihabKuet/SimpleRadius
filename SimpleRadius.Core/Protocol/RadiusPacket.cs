@@ -42,6 +42,7 @@ public enum RadiusAttributeType : byte
     AcctOutputOctets      = 43,
     AcctSessionId         = 44,
     AcctSessionTime       = 46,
+    AcctTerminateCause    = 49,
     NasPortType           = 61,
     TunnelType            = 64,   // VLAN tagging
     TunnelMediumType      = 65,
@@ -78,6 +79,8 @@ public sealed class RadiusAttribute
 
     // Decode helpers
     public string   AsString()  => Encoding.UTF8.GetString(Value);
+    public string   AsIpString() => Value.Length == 4
+        ? $"{Value[0]}.{Value[1]}.{Value[2]}.{Value[3]}" : AsString();
     public uint     AsUInt32()  => Value.Length >= 4
         ? (uint)((Value[0] << 24) | (Value[1] << 16) | (Value[2] << 8) | Value[3]) : 0;
 

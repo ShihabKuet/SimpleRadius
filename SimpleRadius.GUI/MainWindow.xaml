@@ -2,8 +2,9 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Simple Radius — RADIUS Server"
-        Height="700" Width="1150"
-        MinHeight="620" MinWidth="950"
+        Icon="Resources/app.ico"
+        Height="720" Width="1200"
+        MinHeight="640" MinWidth="980"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource ContentBgBrush}">
 
@@ -14,7 +15,6 @@
             <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
             <Setter Property="Margin"     Value="0,0,0,4"/>
         </Style>
-
         <Style x:Key="NavButtonStyle" TargetType="Button">
             <Setter Property="Background"                 Value="Transparent"/>
             <Setter Property="Foreground"                 Value="{StaticResource SidebarTextBrush}"/>
@@ -26,7 +26,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                        <Border Background="{TemplateBinding Background}"
                                 BorderBrush="Transparent" BorderThickness="3,0,0,0"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
@@ -40,7 +40,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
         <Style x:Key="NavButtonActiveStyle" TargetType="Button">
             <Setter Property="Background"                 Value="#162336"/>
             <Setter Property="Foreground"                 Value="White"/>
@@ -55,16 +54,13 @@
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}"
                                 BorderBrush="{StaticResource AccentBlueBrush}"
-                                BorderThickness="3,0,0,0"
-                                Padding="{TemplateBinding Padding}">
+                                BorderThickness="3,0,0,0" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-
-        <!-- Edit mode banner style -->
         <Style x:Key="EditBanner" TargetType="Border">
             <Setter Property="Background"      Value="#FFF8E6"/>
             <Setter Property="BorderBrush"     Value="#F59E0B"/>
@@ -81,11 +77,10 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ══════════════════════════════════════════════════════════════════ -->
-        <!-- SIDEBAR                                                           -->
-        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- ══ SIDEBAR ══════════════════════════════════════════════════════ -->
         <Border Grid.Column="0" Background="{StaticResource SidebarBgBrush}">
             <DockPanel>
+                <!-- Brand -->
                 <StackPanel DockPanel.Dock="Top" Margin="14,16,14,10">
                     <StackPanel Orientation="Horizontal">
                         <Border Width="32" Height="32" CornerRadius="7"
@@ -95,179 +90,128 @@
                         </Border>
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="Simple Radius" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
-                            <TextBlock Text="v1.0 — Phase 1" FontSize="10" Foreground="#4A6080"/>
+                            <TextBlock Text="v2.0 — Phase 2" FontSize="10" Foreground="#4A6080"/>
                         </StackPanel>
                     </StackPanel>
                     <Border x:Name="StatusChip" CornerRadius="5" Margin="0,10,0,0" Padding="8,5">
-                        <Border.Background>
-                            <SolidColorBrush x:Name="StatusChipBg" Color="#260D0D"/>
-                        </Border.Background>
+                        <Border.Background><SolidColorBrush x:Name="StatusChipBg" Color="#260D0D"/></Border.Background>
                         <StackPanel Orientation="Horizontal">
                             <Ellipse x:Name="StatusDot" Width="7" Height="7" Margin="0,0,8,0">
-                                <Ellipse.Fill>
-                                    <SolidColorBrush x:Name="StatusDotColor" Color="#EF4444"/>
-                                </Ellipse.Fill>
+                                <Ellipse.Fill><SolidColorBrush x:Name="StatusDotColor" Color="#EF4444"/></Ellipse.Fill>
                             </Ellipse>
                             <TextBlock x:Name="StatusText" Text="Server Stopped" FontSize="11" FontWeight="Medium">
-                                <TextBlock.Foreground>
-                                    <SolidColorBrush x:Name="StatusTextColor" Color="#EF4444"/>
-                                </TextBlock.Foreground>
+                                <TextBlock.Foreground><SolidColorBrush x:Name="StatusTextColor" Color="#EF4444"/></TextBlock.Foreground>
                             </TextBlock>
                         </StackPanel>
                     </Border>
                 </StackPanel>
 
+                <!-- Footer -->
                 <StackPanel DockPanel.Dock="Bottom" Margin="14,0,14,12">
                     <Rectangle Height="1" Fill="#1E2D3D" Margin="0,0,0,8"/>
                     <TextBlock Text="Auth:  UDP 1812" FontSize="10" Foreground="#3D5570"/>
                     <TextBlock Text="Acct:  UDP 1813" FontSize="10" Foreground="#3D5570" Margin="0,2,0,0"/>
-                    <TextBlock x:Name="UptimeText" Text="Uptime: —" FontSize="10"
-                               Foreground="#3D5570" Margin="0,6,0,0"/>
+                    <TextBlock x:Name="UptimeText" Text="Uptime: —" FontSize="10" Foreground="#3D5570" Margin="0,6,0,0"/>
                 </StackPanel>
 
+                <!-- Nav -->
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="0,4,0,0">
-                        <TextBlock Text="MONITOR" FontSize="9" FontWeight="SemiBold"
-                                   Foreground="#2D4055" Margin="14,10,0,4"/>
-                        <Button x:Name="NavDashboard" Tag="Dashboard" Click="NavButton_Click"
-                                Style="{StaticResource NavButtonStyle}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#x229E;" Width="20" FontSize="13"/>
-                                <TextBlock Text="Dashboard"/>
-                            </StackPanel>
+                        <TextBlock Text="MONITOR" FontSize="9" FontWeight="SemiBold" Foreground="#2D4055" Margin="14,10,0,4"/>
+                        <Button x:Name="NavDashboard" Tag="Dashboard" Click="NavButton_Click" Style="{StaticResource NavButtonStyle}">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#x229E;" Width="20" FontSize="13"/><TextBlock Text="Dashboard"/></StackPanel>
                         </Button>
-                        <Button x:Name="NavLogs" Tag="Logs" Click="NavButton_Click"
-                                Style="{StaticResource NavButtonStyle}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#x25B6;" Width="20" FontSize="11"/>
-                                <TextBlock Text="Live Logs"/>
-                            </StackPanel>
+                        <Button x:Name="NavLogs" Tag="Logs" Click="NavButton_Click" Style="{StaticResource NavButtonStyle}">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#x25B6;" Width="20" FontSize="11"/><TextBlock Text="Live Logs"/></StackPanel>
+                        </Button>
+                        <Button x:Name="NavAccounting" Tag="Accounting" Click="NavButton_Click" Style="{StaticResource NavButtonStyle}">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#x25A3;" Width="20" FontSize="13"/><TextBlock Text="Accounting"/></StackPanel>
                         </Button>
 
-                        <TextBlock Text="CONFIGURE" FontSize="9" FontWeight="SemiBold"
-                                   Foreground="#2D4055" Margin="14,12,0,4"/>
-                        <Button x:Name="NavUsers" Tag="Users" Click="NavButton_Click"
-                                Style="{StaticResource NavButtonStyle}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#x25C9;" Width="20" FontSize="13"/>
-                                <TextBlock Text="Users"/>
-                            </StackPanel>
+                        <TextBlock Text="CONFIGURE" FontSize="9" FontWeight="SemiBold" Foreground="#2D4055" Margin="14,12,0,4"/>
+                        <Button x:Name="NavUsers" Tag="Users" Click="NavButton_Click" Style="{StaticResource NavButtonStyle}">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#x25C9;" Width="20" FontSize="13"/><TextBlock Text="Users"/></StackPanel>
                         </Button>
-                        <Button x:Name="NavNas" Tag="NAS" Click="NavButton_Click"
-                                Style="{StaticResource NavButtonStyle}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#x229F;" Width="20" FontSize="13"/>
-                                <TextBlock Text="NAS / Clients"/>
-                            </StackPanel>
+                        <Button x:Name="NavNas" Tag="NAS" Click="NavButton_Click" Style="{StaticResource NavButtonStyle}">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#x229F;" Width="20" FontSize="13"/><TextBlock Text="NAS / Clients"/></StackPanel>
+                        </Button>
+                        <Button x:Name="NavPolicy" Tag="Policy" Click="NavButton_Click" Style="{StaticResource NavButtonStyle}">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#x2630;" Width="20" FontSize="13"/><TextBlock Text="Policies"/></StackPanel>
                         </Button>
 
-                        <TextBlock Text="SYSTEM" FontSize="9" FontWeight="SemiBold"
-                                   Foreground="#2D4055" Margin="14,12,0,4"/>
-                        <Button x:Name="NavSettings" Tag="Settings" Click="NavButton_Click"
-                                Style="{StaticResource NavButtonStyle}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#x2699;" Width="20" FontSize="13"/>
-                                <TextBlock Text="Settings"/>
-                            </StackPanel>
+                        <TextBlock Text="SYSTEM" FontSize="9" FontWeight="SemiBold" Foreground="#2D4055" Margin="14,12,0,4"/>
+                        <Button x:Name="NavSettings" Tag="Settings" Click="NavButton_Click" Style="{StaticResource NavButtonStyle}">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#x2699;" Width="20" FontSize="13"/><TextBlock Text="Settings"/></StackPanel>
                         </Button>
                     </StackPanel>
                 </ScrollViewer>
             </DockPanel>
         </Border>
 
-        <!-- ══════════════════════════════════════════════════════════════════ -->
-        <!-- MAIN CONTENT                                                      -->
-        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- ══ MAIN CONTENT ═════════════════════════════════════════════════ -->
         <DockPanel Grid.Column="1">
+            <!-- Top bar -->
             <Border DockPanel.Dock="Top" Background="White"
-                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1"
-                    Padding="18,10">
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="18,10">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock x:Name="PageTitle" Text="Dashboard" FontSize="15"
-                                   FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
-                        <TextBlock x:Name="PageSubtitle" Text="Server overview and live statistics"
-                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                        <TextBlock x:Name="PageTitle" Text="Dashboard" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                        <TextBlock x:Name="PageSubtitle" Text="Server overview and live statistics" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0"/>
                     </StackPanel>
                     <Button x:Name="BtnToggleServer" Grid.Column="1" Content="Start Server"
-                            Style="{StaticResource BtnPrimary}" Width="115"
-                            Click="BtnToggleServer_Click"/>
+                            Style="{StaticResource BtnPrimary}" Width="115" Click="BtnToggleServer_Click"/>
                 </Grid>
             </Border>
 
             <Grid Background="{StaticResource ContentBgBrush}">
 
-                <!-- ── DASHBOARD ──────────────────────────────────────────── -->
-                <ScrollViewer x:Name="PageDashboard" Padding="18,14" Visibility="Visible"
-                              VerticalScrollBarVisibility="Auto">
+                <!-- ── DASHBOARD ─────────────────────────────────────────── -->
+                <ScrollViewer x:Name="PageDashboard" Padding="18,14" Visibility="Visible" VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Border Grid.Column="0" Style="{StaticResource CardBorder}" Margin="0,0,6,0">
                                 <StackPanel>
-                                    <TextBlock Text="AUTH ACCEPTED" FontSize="10" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextSecondaryBrush}"/>
-                                    <TextBlock x:Name="StatAccepts" Text="0" FontSize="26"
-                                               FontFamily="{StaticResource MonoFont}"
-                                               Foreground="{StaticResource AccentGreenBrush}" Margin="0,6,0,2"/>
-                                    <TextBlock Text="total accepted" FontSize="10"
-                                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="AUTH ACCEPTED" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock x:Name="StatAccepts" Text="0" FontSize="26" FontFamily="{StaticResource MonoFont}" Foreground="{StaticResource AccentGreenBrush}" Margin="0,6,0,2"/>
+                                    <TextBlock Text="total accepted" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"/>
                                 </StackPanel>
                             </Border>
                             <Border Grid.Column="1" Style="{StaticResource CardBorder}" Margin="6,0,6,0">
                                 <StackPanel>
-                                    <TextBlock Text="AUTH REJECTED" FontSize="10" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextSecondaryBrush}"/>
-                                    <TextBlock x:Name="StatRejects" Text="0" FontSize="26"
-                                               FontFamily="{StaticResource MonoFont}"
-                                               Foreground="{StaticResource AccentRedBrush}" Margin="0,6,0,2"/>
-                                    <TextBlock Text="total rejected" FontSize="10"
-                                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="AUTH REJECTED" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock x:Name="StatRejects" Text="0" FontSize="26" FontFamily="{StaticResource MonoFont}" Foreground="{StaticResource AccentRedBrush}" Margin="0,6,0,2"/>
+                                    <TextBlock Text="total rejected" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"/>
                                 </StackPanel>
                             </Border>
                             <Border Grid.Column="2" Style="{StaticResource CardBorder}" Margin="6,0,6,0">
                                 <StackPanel>
-                                    <TextBlock Text="ACCOUNTING PKT" FontSize="10" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextSecondaryBrush}"/>
-                                    <TextBlock x:Name="StatAccounting" Text="0" FontSize="26"
-                                               FontFamily="{StaticResource MonoFont}"
-                                               Foreground="{StaticResource AccentBlueBrush}" Margin="0,6,0,2"/>
-                                    <TextBlock Text="accounting records" FontSize="10"
-                                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="ACCOUNTING PKT" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock x:Name="StatAccounting" Text="0" FontSize="26" FontFamily="{StaticResource MonoFont}" Foreground="{StaticResource AccentBlueBrush}" Margin="0,6,0,2"/>
+                                    <TextBlock Text="accounting records" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"/>
                                 </StackPanel>
                             </Border>
                             <Border Grid.Column="3" Style="{StaticResource CardBorder}" Margin="6,0,0,0">
                                 <StackPanel>
-                                    <TextBlock Text="SERVER UPTIME" FontSize="10" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextSecondaryBrush}"/>
-                                    <TextBlock x:Name="StatUptime" Text="&#x2014;" FontSize="26"
-                                               FontFamily="{StaticResource MonoFont}"
-                                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,6,0,2"/>
-                                    <TextBlock Text="since last start" FontSize="10"
-                                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock Text="SERVER UPTIME" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock x:Name="StatUptime" Text="&#x2014;" FontSize="26" FontFamily="{StaticResource MonoFont}" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,6,0,2"/>
+                                    <TextBlock Text="since last start" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"/>
                                 </StackPanel>
                             </Border>
                         </Grid>
-
                         <Border Style="{StaticResource CardBorder}">
                             <StackPanel>
-                                <TextBlock Text="Recent Authentication Events" FontSize="13" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
+                                <TextBlock Text="Recent Authentication Events" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
                                 <DataGrid x:Name="DashboardEventGrid" Height="240" IsReadOnly="True">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Time"     Binding="{Binding Timestamp, StringFormat=HH:mm:ss}" Width="75"/>
                                         <DataGridTextColumn Header="Username" Binding="{Binding Username}"   Width="*"/>
                                         <DataGridTextColumn Header="NAS IP"   Binding="{Binding NasIp}"      Width="120"/>
-                                        <DataGridTextColumn Header="Method"   Binding="{Binding Method}"     Width="80"/>
+                                        <DataGridTextColumn Header="Method"   Binding="{Binding Method}"     Width="90"/>
                                         <DataGridTextColumn Header="Result"   Binding="{Binding ResultText}" Width="80"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
@@ -276,65 +220,122 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- ── LIVE LOGS ───────────────────────────────────────────── -->
+                <!-- ── LIVE LOGS ─────────────────────────────────────────── -->
                 <Grid x:Name="PageLogs" Visibility="Collapsed">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <Border Grid.Row="0" Background="White"
-                            BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1"
-                            Padding="18,8">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <Border Grid.Row="0" Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="18,8">
                         <StackPanel Orientation="Horizontal">
-                            <Button Content="Clear Log" Style="{StaticResource BtnSecondary}"
-                                    Click="BtnClearLog_Click" Margin="0,0,10,0"/>
-                            <CheckBox x:Name="ChkAutoScroll" Content="Auto-scroll" IsChecked="True"
-                                      VerticalAlignment="Center" FontSize="12"
-                                      Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <Button Content="Clear Log" Style="{StaticResource BtnSecondary}" Click="BtnClearLog_Click" Margin="0,0,10,0"/>
+                            <CheckBox x:Name="ChkAutoScroll" Content="Auto-scroll" IsChecked="True" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
                         </StackPanel>
                     </Border>
-                    <ListBox x:Name="LogListBox" Grid.Row="1"
-                             Background="#0D1117" Foreground="#C9D1D9"
-                             FontFamily="{StaticResource MonoFont}" FontSize="11"
-                             BorderThickness="0" Padding="12,8"
+                    <ListBox x:Name="LogListBox" Grid.Row="1" Background="#0D1117" Foreground="#C9D1D9"
+                             FontFamily="{StaticResource MonoFont}" FontSize="11" BorderThickness="0" Padding="12,8"
                              VirtualizingStackPanel.IsVirtualizing="True"
                              VirtualizingStackPanel.VirtualizationMode="Recycling"
                              ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
                 </Grid>
 
-                <!-- ── USERS ───────────────────────────────────────────────── -->
-                <ScrollViewer x:Name="PageUsers" Padding="18,14" Visibility="Collapsed"
-                              VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
+                <!-- ── ACCOUNTING ────────────────────────────────────────── -->
+                <Grid x:Name="PageAccounting" Visibility="Collapsed">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
 
-                        <!-- Add / Edit user form -->
-                        <Border Style="{StaticResource CardBorder}">
-                            <StackPanel>
+                    <!-- Filters bar -->
+                    <Border Grid.Row="0" Background="White" BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="0,0,0,1" Padding="18,10">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="From:" FontSize="11" VerticalAlignment="Center"
+                                       Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,6,0"/>
+                            <DatePicker x:Name="AcctFrom" FontSize="11" Width="120" Margin="0,0,12,0"/>
+                            <TextBlock Text="To:" FontSize="11" VerticalAlignment="Center"
+                                       Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,6,0"/>
+                            <DatePicker x:Name="AcctTo" FontSize="11" Width="120" Margin="0,0,12,0"/>
+                            <TextBlock Text="User:" FontSize="11" VerticalAlignment="Center"
+                                       Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,6,0"/>
+                            <TextBox x:Name="AcctUserFilter" Width="120" FontSize="11" Padding="6,4" Margin="0,0,10,0"/>
+                            <Button Content="Search" Style="{StaticResource BtnPrimary}"
+                                    Click="BtnAcctSearch_Click" Margin="0,0,8,0"/>
+                            <Button Content="Active Only" Style="{StaticResource BtnSecondary}"
+                                    Click="BtnAcctActive_Click" Margin="0,0,8,0"/>
+                            <Button Content="Export CSV" Style="{StaticResource BtnSecondary}"
+                                    Click="BtnAcctExport_Click"/>
+                        </StackPanel>
+                    </Border>
 
-                                <!-- Edit mode banner -->
-                                <Border x:Name="UserEditBanner" Style="{StaticResource EditBanner}"
-                                        Visibility="Collapsed">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#x270E;  Editing user: " FontSize="11"
-                                                   Foreground="#92600A" FontWeight="SemiBold"/>
-                                        <TextBlock x:Name="UserEditBannerName" FontSize="11"
-                                                   Foreground="#92600A" FontWeight="Bold"/>
-                                        <TextBlock Text="  — make changes below and click Update User"
-                                                   FontSize="11" Foreground="#92600A"/>
+                    <ScrollViewer Grid.Row="1" Padding="18,14" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <!-- Stats row -->
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Style="{StaticResource CardBorder}" Margin="0,0,6,0">
+                                    <StackPanel>
+                                        <TextBlock Text="TOTAL SESSIONS" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <TextBlock x:Name="AcctStatTotal" Text="0" FontSize="24" FontFamily="{StaticResource MonoFont}" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,6,0,2"/>
                                     </StackPanel>
                                 </Border>
+                                <Border Grid.Column="1" Style="{StaticResource CardBorder}" Margin="6,0,6,0">
+                                    <StackPanel>
+                                        <TextBlock Text="ACTIVE NOW" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <TextBlock x:Name="AcctStatActive" Text="0" FontSize="24" FontFamily="{StaticResource MonoFont}" Foreground="{StaticResource AccentGreenBrush}" Margin="0,6,0,2"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="2" Style="{StaticResource CardBorder}" Margin="6,0,6,0">
+                                    <StackPanel>
+                                        <TextBlock Text="DATA IN (MB)" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <TextBlock x:Name="AcctStatIn" Text="0" FontSize="24" FontFamily="{StaticResource MonoFont}" Foreground="{StaticResource AccentBlueBrush}" Margin="0,6,0,2"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="3" Style="{StaticResource CardBorder}" Margin="6,0,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="DATA OUT (MB)" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <TextBlock x:Name="AcctStatOut" Text="0" FontSize="24" FontFamily="{StaticResource MonoFont}" Foreground="{StaticResource AccentAmberBrush}" Margin="0,6,0,2"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
 
-                                <TextBlock x:Name="UserFormTitle" Text="Add New User"
-                                           FontSize="13" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,14"/>
+                            <Border Style="{StaticResource CardBorder}">
+                                <StackPanel>
+                                    <TextBlock Text="Session Log" FontSize="13" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
+                                    <DataGrid x:Name="AccountingGrid" Height="360" IsReadOnly="True">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Username"   Binding="{Binding Username}"                                Width="120"/>
+                                            <DataGridTextColumn Header="NAS IP"     Binding="{Binding NasIp}"                                   Width="110"/>
+                                            <DataGridTextColumn Header="Start"      Binding="{Binding StartTime, StringFormat=MM-dd HH:mm:ss}"  Width="130"/>
+                                            <DataGridTextColumn Header="Stop"       Binding="{Binding StopTime,  StringFormat=MM-dd HH:mm:ss}"  Width="130"/>
+                                            <DataGridTextColumn Header="Duration"   Binding="{Binding Duration}"                                Width="80"/>
+                                            <DataGridTextColumn Header="In"         Binding="{Binding InputMb}"                                 Width="80"/>
+                                            <DataGridTextColumn Header="Out"        Binding="{Binding OutputMb}"                                Width="80"/>
+                                            <DataGridTextColumn Header="Status"     Binding="{Binding StatusText}"                              Width="70"/>
+                                            <DataGridTextColumn Header="Cause"      Binding="{Binding TerminateCause}"                          Width="*"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
 
-                                <!-- Row 1: username, password, group, vlan -->
+                <!-- ── USERS ─────────────────────────────────────────────── -->
+                <ScrollViewer x:Name="PageUsers" Padding="18,14" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Style="{StaticResource CardBorder}">
+                            <StackPanel>
+                                <Border x:Name="UserEditBanner" Style="{StaticResource EditBanner}" Visibility="Collapsed">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#x270E;  Editing user: " FontSize="11" Foreground="#92600A" FontWeight="SemiBold"/>
+                                        <TextBlock x:Name="UserEditBannerName" FontSize="11" Foreground="#92600A" FontWeight="Bold"/>
+                                        <TextBlock Text="  — make changes and click Update User" FontSize="11" Foreground="#92600A"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock x:Name="UserFormTitle" Text="Add New User" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,14"/>
                                 <Grid Margin="0,0,0,10">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="130"/>
-                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="130"/><ColumnDefinition Width="80"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" Margin="0,0,8,0">
                                         <TextBlock Text="USERNAME" Style="{StaticResource FieldLabel}"/>
@@ -342,9 +343,7 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Margin="0,0,8,0">
                                         <TextBlock Text="PASSWORD" Style="{StaticResource FieldLabel}"/>
-                                        <PasswordBox x:Name="PwdNewPassword"
-                                                     BorderBrush="{StaticResource BorderBrush}"
-                                                     BorderThickness="1" Padding="8,6" FontSize="12"/>
+                                        <PasswordBox x:Name="PwdNewPassword" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="8,6" FontSize="12"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2" Margin="0,0,8,0">
                                         <TextBlock Text="GROUP" Style="{StaticResource FieldLabel}"/>
@@ -360,38 +359,21 @@
                                         <TextBox x:Name="TxtNewVlan" Text="0"/>
                                     </StackPanel>
                                 </Grid>
-
-                                <!-- Row 2: description -->
                                 <StackPanel Margin="0,0,0,12">
                                     <TextBlock Text="DESCRIPTION (optional)" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox x:Name="TxtNewUserDesc"
-                                             ToolTip="E.g. department, device name, location"/>
+                                    <TextBox x:Name="TxtNewUserDesc"/>
                                 </StackPanel>
-
-                                <!-- Action buttons -->
                                 <StackPanel Orientation="Horizontal">
-                                    <Button x:Name="BtnSaveUser" Content="Add User"
-                                            Style="{StaticResource BtnPrimary}"
-                                            Click="BtnSaveUser_Click" Width="100"/>
-                                    <Button x:Name="BtnCancelUserEdit" Content="Cancel"
-                                            Style="{StaticResource BtnSecondary}"
-                                            Click="BtnCancelUserEdit_Click"
-                                            Margin="8,0,0,0" Width="80" Visibility="Collapsed"/>
+                                    <Button x:Name="BtnSaveUser" Content="Add User" Style="{StaticResource BtnPrimary}" Click="BtnSaveUser_Click" Width="100"/>
+                                    <Button x:Name="BtnCancelUserEdit" Content="Cancel" Style="{StaticResource BtnSecondary}" Click="BtnCancelUserEdit_Click" Margin="8,0,0,0" Width="80" Visibility="Collapsed"/>
                                 </StackPanel>
-
-                                <TextBlock x:Name="UserFormError" Text="" FontSize="11"
-                                           Foreground="{StaticResource AccentRedBrush}"
-                                           Margin="0,8,0,0" Visibility="Collapsed"/>
+                                <TextBlock x:Name="UserFormError" Text="" FontSize="11" Foreground="{StaticResource AccentRedBrush}" Margin="0,8,0,0" Visibility="Collapsed"/>
                             </StackPanel>
                         </Border>
-
-                        <!-- Users table -->
                         <Border Style="{StaticResource CardBorder}">
                             <StackPanel>
-                                <TextBlock Text="User Database" FontSize="13" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
-                                <DataGrid x:Name="UsersGrid" Height="260" IsReadOnly="True"
-                                          SelectionChanged="UsersGrid_SelectionChanged">
+                                <TextBlock Text="User Database" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
+                                <DataGrid x:Name="UsersGrid" Height="260" IsReadOnly="True" SelectionChanged="UsersGrid_SelectionChanged">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Username"    Binding="{Binding Username}"    Width="140"/>
                                         <DataGridTextColumn Header="Group"       Binding="{Binding Group}"       Width="90"/>
@@ -401,51 +383,32 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                    <Button Content="&#x270E;  Edit Selected" Style="{StaticResource BtnSecondary}"
-                                            Click="BtnEditUser_Click" Margin="0,0,8,0"/>
-                                    <Button Content="Toggle Enabled" Style="{StaticResource BtnSecondary}"
-                                            Click="BtnToggleUser_Click" Margin="0,0,8,0"/>
-                                    <Button Content="Delete Selected" Style="{StaticResource BtnDanger}"
-                                            Click="BtnDeleteUser_Click"/>
+                                    <Button Content="&#x270E;  Edit Selected" Style="{StaticResource BtnSecondary}" Click="BtnEditUser_Click" Margin="0,0,8,0"/>
+                                    <Button Content="Toggle Enabled" Style="{StaticResource BtnSecondary}" Click="BtnToggleUser_Click" Margin="0,0,8,0"/>
+                                    <Button Content="Delete Selected" Style="{StaticResource BtnDanger}" Click="BtnDeleteUser_Click"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- ── NAS / CLIENTS ───────────────────────────────────────── -->
-                <ScrollViewer x:Name="PageNas" Padding="18,14" Visibility="Collapsed"
-                              VerticalScrollBarVisibility="Auto">
+                <!-- ── NAS ───────────────────────────────────────────────── -->
+                <ScrollViewer x:Name="PageNas" Padding="18,14" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-
-                        <!-- Add / Edit NAS form -->
                         <Border Style="{StaticResource CardBorder}">
                             <StackPanel>
-
-                                <!-- Edit mode banner -->
-                                <Border x:Name="NasEditBanner" Style="{StaticResource EditBanner}"
-                                        Visibility="Collapsed">
+                                <Border x:Name="NasEditBanner" Style="{StaticResource EditBanner}" Visibility="Collapsed">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#x270E;  Editing NAS: " FontSize="11"
-                                                   Foreground="#92600A" FontWeight="SemiBold"/>
-                                        <TextBlock x:Name="NasEditBannerName" FontSize="11"
-                                                   Foreground="#92600A" FontWeight="Bold"/>
-                                        <TextBlock Text="  — make changes below and click Update NAS"
-                                                   FontSize="11" Foreground="#92600A"/>
+                                        <TextBlock Text="&#x270E;  Editing NAS: " FontSize="11" Foreground="#92600A" FontWeight="SemiBold"/>
+                                        <TextBlock x:Name="NasEditBannerName" FontSize="11" Foreground="#92600A" FontWeight="Bold"/>
+                                        <TextBlock Text="  — make changes and click Update NAS" FontSize="11" Foreground="#92600A"/>
                                     </StackPanel>
                                 </Border>
-
-                                <TextBlock x:Name="NasFormTitle" Text="Add NAS Client"
-                                           FontSize="13" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,14"/>
-
-                                <!-- Row 1: name, ip, secret, vendor -->
+                                <TextBlock x:Name="NasFormTitle" Text="Add NAS Client" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,14"/>
                                 <Grid Margin="0,0,0,10">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/><ColumnDefinition Width="120"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" Margin="0,0,8,0">
                                         <TextBlock Text="FRIENDLY NAME" Style="{StaticResource FieldLabel}"/>
@@ -457,9 +420,7 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="2" Margin="0,0,8,0">
                                         <TextBlock Text="SHARED SECRET" Style="{StaticResource FieldLabel}"/>
-                                        <PasswordBox x:Name="PwdNasSecret"
-                                                     BorderBrush="{StaticResource BorderBrush}"
-                                                     BorderThickness="1" Padding="8,6" FontSize="12"/>
+                                        <PasswordBox x:Name="PwdNasSecret" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="8,6" FontSize="12"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="3">
                                         <TextBlock Text="VENDOR" Style="{StaticResource FieldLabel}"/>
@@ -475,38 +436,21 @@
                                         </ComboBox>
                                     </StackPanel>
                                 </Grid>
-
-                                <!-- Row 2: description -->
                                 <StackPanel Margin="0,0,0,12">
                                     <TextBlock Text="DESCRIPTION (optional)" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox x:Name="TxtNasDesc"
-                                             ToolTip="E.g. floor, building, device location"/>
+                                    <TextBox x:Name="TxtNasDesc"/>
                                 </StackPanel>
-
-                                <!-- Action buttons -->
                                 <StackPanel Orientation="Horizontal">
-                                    <Button x:Name="BtnSaveNas" Content="Add NAS"
-                                            Style="{StaticResource BtnPrimary}"
-                                            Click="BtnSaveNas_Click" Width="100"/>
-                                    <Button x:Name="BtnCancelNasEdit" Content="Cancel"
-                                            Style="{StaticResource BtnSecondary}"
-                                            Click="BtnCancelNasEdit_Click"
-                                            Margin="8,0,0,0" Width="80" Visibility="Collapsed"/>
+                                    <Button x:Name="BtnSaveNas" Content="Add NAS" Style="{StaticResource BtnPrimary}" Click="BtnSaveNas_Click" Width="100"/>
+                                    <Button x:Name="BtnCancelNasEdit" Content="Cancel" Style="{StaticResource BtnSecondary}" Click="BtnCancelNasEdit_Click" Margin="8,0,0,0" Width="80" Visibility="Collapsed"/>
                                 </StackPanel>
-
-                                <TextBlock x:Name="NasFormError" Text="" FontSize="11"
-                                           Foreground="{StaticResource AccentRedBrush}"
-                                           Margin="0,8,0,0" Visibility="Collapsed"/>
+                                <TextBlock x:Name="NasFormError" Text="" FontSize="11" Foreground="{StaticResource AccentRedBrush}" Margin="0,8,0,0" Visibility="Collapsed"/>
                             </StackPanel>
                         </Border>
-
-                        <!-- NAS table -->
                         <Border Style="{StaticResource CardBorder}">
                             <StackPanel>
-                                <TextBlock Text="Registered NAS Clients" FontSize="13" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
-                                <DataGrid x:Name="NasGrid" Height="240" IsReadOnly="True"
-                                          SelectionChanged="NasGrid_SelectionChanged">
+                                <TextBlock Text="Registered NAS Clients" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
+                                <DataGrid x:Name="NasGrid" Height="240" IsReadOnly="True" SelectionChanged="NasGrid_SelectionChanged">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Name"        Binding="{Binding Name}"        Width="140"/>
                                         <DataGridTextColumn Header="IP / CIDR"   Binding="{Binding IpAddress}"   Width="130"/>
@@ -515,29 +459,127 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                    <Button Content="&#x270E;  Edit Selected" Style="{StaticResource BtnSecondary}"
-                                            Click="BtnEditNas_Click" Margin="0,0,8,0"/>
-                                    <Button Content="Delete Selected" Style="{StaticResource BtnDanger}"
-                                            Click="BtnDeleteNas_Click"/>
+                                    <Button Content="&#x270E;  Edit Selected" Style="{StaticResource BtnSecondary}" Click="BtnEditNas_Click" Margin="0,0,8,0"/>
+                                    <Button Content="Delete Selected" Style="{StaticResource BtnDanger}" Click="BtnDeleteNas_Click"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- ── SETTINGS ─────────────────────────────────────────────── -->
-                <ScrollViewer x:Name="PageSettings" Padding="18,14" Visibility="Collapsed"
-                              VerticalScrollBarVisibility="Auto">
+                <!-- ── POLICY ────────────────────────────────────────────── -->
+                <ScrollViewer x:Name="PagePolicy" Padding="18,14" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <Border Style="{StaticResource CardBorder}">
                             <StackPanel>
-                                <TextBlock Text="Server Configuration" FontSize="13" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,14"/>
-                                <Grid>
+                                <Border x:Name="PolicyEditBanner" Style="{StaticResource EditBanner}" Visibility="Collapsed">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#x270E;  Editing policy: " FontSize="11" Foreground="#92600A" FontWeight="SemiBold"/>
+                                        <TextBlock x:Name="PolicyEditBannerName" FontSize="11" Foreground="#92600A" FontWeight="Bold"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock x:Name="PolicyFormTitle" Text="Add Policy Rule" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,14"/>
+
+                                <!-- Row 1: name, priority, match conditions -->
+                                <Grid Margin="0,0,0,10">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/><ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                        <TextBlock Text="POLICY NAME" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox x:Name="TxtPolicyName"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                                        <TextBlock Text="PRIORITY" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox x:Name="TxtPolicyPriority" Text="50"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Margin="0,0,8,0">
+                                        <TextBlock Text="MATCH GROUP (blank=any)" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox x:Name="TxtPolicyGroup"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="3" Margin="0,0,8,0">
+                                        <TextBlock Text="MATCH NAS IP (blank=any)" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox x:Name="TxtPolicyNasIp"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="4">
+                                        <TextBlock Text="MATCH USERNAME (blank=any)" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox x:Name="TxtPolicyUser"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Row 2: reply attributes -->
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80"/><ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="100"/><ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                        <TextBlock Text="VLAN ID" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox x:Name="TxtPolicyVlan" Text="0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                                        <TextBlock Text="SESSION TIMEOUT (s)" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox x:Name="TxtPolicyTimeout" Text="0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Margin="0,0,8,0">
+                                        <TextBlock Text="IDLE TIMEOUT (s)" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox x:Name="TxtPolicyIdle" Text="0"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="3" Margin="0,0,8,0">
+                                        <TextBlock Text="REPLY MESSAGE" Style="{StaticResource FieldLabel}"/>
+                                        <TextBox x:Name="TxtPolicyReply"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="4" VerticalAlignment="Bottom">
+                                        <CheckBox x:Name="ChkPolicyReject" Content="Reject" FontSize="11" Margin="8,0,0,6"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <Button x:Name="BtnSavePolicy" Content="Add Policy" Style="{StaticResource BtnPrimary}" Click="BtnSavePolicy_Click" Width="110"/>
+                                    <Button x:Name="BtnCancelPolicyEdit" Content="Cancel" Style="{StaticResource BtnSecondary}" Click="BtnCancelPolicyEdit_Click" Margin="8,0,0,0" Width="80" Visibility="Collapsed"/>
+                                </StackPanel>
+                                <TextBlock x:Name="PolicyFormError" Text="" FontSize="11" Foreground="{StaticResource AccentRedBrush}" Margin="0,8,0,0" Visibility="Collapsed"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource CardBorder}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="Policy Rules" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="  — evaluated top-down, first match wins" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <DataGrid x:Name="PolicyGrid" Height="280" IsReadOnly="True" SelectionChanged="PolicyGrid_SelectionChanged">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="#"          Binding="{Binding Priority}"          Width="45"/>
+                                        <DataGridTextColumn Header="Name"       Binding="{Binding Name}"              Width="*"/>
+                                        <DataGridTextColumn Header="Group"      Binding="{Binding MatchGroup}"        Width="90"/>
+                                        <DataGridTextColumn Header="NAS IP"     Binding="{Binding MatchNasIp}"        Width="110"/>
+                                        <DataGridTextColumn Header="VLAN"       Binding="{Binding VlanId}"            Width="55"/>
+                                        <DataGridTextColumn Header="Timeout"    Binding="{Binding SessionTimeoutSecs}" Width="70"/>
+                                        <DataGridTextColumn Header="Reject"     Binding="{Binding Reject}"            Width="60"/>
+                                        <DataGridTextColumn Header="Enabled"    Binding="{Binding IsEnabled}"         Width="65"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                    <Button Content="&#x270E;  Edit Selected" Style="{StaticResource BtnSecondary}" Click="BtnEditPolicy_Click" Margin="0,0,8,0"/>
+                                    <Button Content="Toggle Enabled" Style="{StaticResource BtnSecondary}" Click="BtnTogglePolicy_Click" Margin="0,0,8,0"/>
+                                    <Button Content="Delete Selected" Style="{StaticResource BtnDanger}" Click="BtnDeletePolicy_Click"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ── SETTINGS ──────────────────────────────────────────── -->
+                <ScrollViewer x:Name="PageSettings" Padding="18,14" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Style="{StaticResource CardBorder}">
+                            <StackPanel>
+                                <TextBlock Text="Server Configuration" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,14"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" Margin="0,0,12,0">
                                         <TextBlock Text="AUTH PORT (UDP)" Style="{StaticResource FieldLabel}"/>
                                         <TextBox x:Name="TxtAuthPort" Text="1812" Margin="0,0,0,12"/>
@@ -551,21 +593,17 @@
                                         <TextBox x:Name="TxtDataDir" Text="data"/>
                                     </StackPanel>
                                 </Grid>
-                                <TextBlock Margin="0,14,0,0" FontSize="11"
-                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                <TextBlock Margin="0,14,0,0" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
                                            Text="Restart the server after changing any setting."/>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource CardBorder}">
                             <StackPanel>
-                                <TextBlock Text="About Simple Radius — Phase 1" FontSize="13"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,10"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20"
-                                           Foreground="{StaticResource TextSecondaryBrush}">
-Phase 1 supports: PAP authentication, local JSON user store, VLAN assignment via Tunnel attributes, NAS client registry with IP/CIDR matching, RFC 2866 accounting responses, and live log streaming.
+                                <TextBlock Text="About Simple Radius — Phase 2" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,10"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="20" Foreground="{StaticResource TextSecondaryBrush}">
+Phase 2 adds: CHAP + MSCHAPv2 authentication, PBKDF2-SHA256 password hashing with auto-migration, SQLite accounting log, policy engine with group/NAS/user matching, and Windows Service support.
 
-Coming in Phase 2: CHAP, MSCHAPv2, PEAP/MSCHAPv2, EAP-TLS, bcrypt password hashing, Windows Service installer, and LDAP/Active Directory backend.
+Coming in Phase 3: PEAP/MSCHAPv2 (WPA2-Enterprise Wi-Fi), EAP-TLS (certificate auth), and LDAP/Active Directory user backend.
                                 </TextBlock>
                             </StackPanel>
                         </Border>

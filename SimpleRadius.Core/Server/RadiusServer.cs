@@ -1,8 +1,10 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using SimpleRadius.Core.Accounting;
 using SimpleRadius.Core.Auth;
 using SimpleRadius.Core.Models;
+using SimpleRadius.Core.Policy;
 using SimpleRadius.Core.Protocol;
 using SimpleRadius.Core.Storage;
 
@@ -34,6 +36,8 @@ public sealed class RadiusServer : IDisposable
     private readonly RadiusServerConfig _config;
     private readonly UserStore          _users;
     private readonly NasStore           _nas;
+    private readonly AccountingStore    _accounting;
+    private readonly PolicyEngine       _policy;
     private readonly IRadiusLogger      _logger;
 
     private UdpClient?               _authSocket;
@@ -42,7 +46,7 @@ public sealed class RadiusServer : IDisposable
     private Task?                    _authTask;
     private Task?                    _acctTask;
 
-    // ── Thread-safe statistics ────────────────────────────────────────────────
+    // ── Statistics ────────────────────────────────────────────────────────────
     private long _totalRequests;
     private long _totalAccepts;
     private long _totalRejects;
@@ -60,30 +64,35 @@ public sealed class RadiusServer : IDisposable
     public event EventHandler<AuthEventArgs>? OnAuthEvent;
     public event EventHandler<string>?        OnLog;
 
+    // ── Public store accessors ────────────────────────────────────────────────
+    public UserStore       Users      => _users;
+    public NasStore        Nas        => _nas;
+    public AccountingStore Accounting => _accounting;
+    public PolicyEngine    Policy     => _policy;
+
     // ── Constructor ───────────────────────────────────────────────────────────
     public RadiusServer(RadiusServerConfig config, IRadiusLogger? logger = null)
     {
-        _config = config;
-        _logger = logger ?? new ConsoleRadiusLogger();
+        _config     = config;
+        _logger     = logger ?? new ConsoleRadiusLogger();
         Directory.CreateDirectory(config.DataDir);
-        _users = new UserStore(Path.Combine(config.DataDir, "users.json"));
-        _nas   = new NasStore(Path.Combine(config.DataDir,  "nas.json"));
+        _users      = new UserStore(Path.Combine(config.DataDir, "users.json"));
+        _nas        = new NasStore(Path.Combine(config.DataDir,  "nas.json"));
+        _accounting = new AccountingStore(config.DataDir);
+        _policy     = new PolicyEngine(config.DataDir);
     }
-
-    public UserStore Users => _users;
-    public NasStore  Nas   => _nas;
 
     // ── Start / Stop ──────────────────────────────────────────────────────────
     public void Start()
     {
         if (IsRunning) return;
-        var bindIp    = IPAddress.Parse(_config.BindAddress);
-        _authSocket   = new UdpClient(new IPEndPoint(bindIp, _config.AuthPort));
-        _acctSocket   = new UdpClient(new IPEndPoint(bindIp, _config.AcctPort));
-        _cts          = new CancellationTokenSource();
-        _authTask     = Task.Run(() => ListenLoop(_authSocket, "AUTH", _cts.Token));
-        _acctTask     = Task.Run(() => ListenLoop(_acctSocket, "ACCT", _cts.Token));
-        IsRunning     = true;
+        var bindIp  = IPAddress.Parse(_config.BindAddress);
+        _authSocket = new UdpClient(new IPEndPoint(bindIp, _config.AuthPort));
+        _acctSocket = new UdpClient(new IPEndPoint(bindIp, _config.AcctPort));
+        _cts        = new CancellationTokenSource();
+        _authTask   = Task.Run(() => ListenLoop(_authSocket, "AUTH", _cts.Token));
+        _acctTask   = Task.Run(() => ListenLoop(_acctSocket, "ACCT", _cts.Token));
+        IsRunning   = true;
         Log($"Simple Radius started — Auth:{_config.AuthPort}  Acct:{_config.AcctPort}");
     }
 
@@ -99,7 +108,7 @@ public sealed class RadiusServer : IDisposable
         Log("Simple Radius stopped.");
     }
 
-    // ── UDP listener ──────────────────────────────────────────────────────────
+    // ── UDP listener loop ─────────────────────────────────────────────────────
     private async Task ListenLoop(UdpClient socket, string label, CancellationToken ct)
     {
         Log($"[{label}] Listening on port {((IPEndPoint)socket.Client.LocalEndPoint!).Port}");
@@ -117,11 +126,10 @@ public sealed class RadiusServer : IDisposable
         Log($"[{label}] Listener stopped.");
     }
 
-    // ── Dispatcher ────────────────────────────────────────────────────────────
+    // ── Packet dispatcher ─────────────────────────────────────────────────────
     private async Task HandlePacket(byte[] data, IPEndPoint remote, UdpClient socket)
     {
         Interlocked.Increment(ref _totalRequests);
-
         var pkt = RadiusPacket.Parse(data);
         if (pkt == null) { Log($"[WARN] Malformed packet from {remote.Address} — discarded"); return; }
 
@@ -133,7 +141,7 @@ public sealed class RadiusServer : IDisposable
         RadiusPacket? response = pkt.Code switch
         {
             RadiusCode.AccessRequest     => HandleAccessRequest(pkt, nas, remote),
-            RadiusCode.AccountingRequest => HandleAccountingRequest(pkt, nas),
+            RadiusCode.AccountingRequest => HandleAccountingRequest(pkt, nas, remote),
             _                            => null,
         };
 
@@ -145,26 +153,23 @@ public sealed class RadiusServer : IDisposable
         }
     }
 
-    // ── Access-Request dispatcher ─────────────────────────────────────────────
+    // ── Access-Request ────────────────────────────────────────────────────────
     private RadiusPacket HandleAccessRequest(RadiusPacket req, NasClient nas, IPEndPoint remote)
     {
-        string secret   = nas.SharedSecret;
         string username = req.UserName ?? "";
-
         if (string.IsNullOrEmpty(username))
-            return Reject(req, secret, "No username");
+            return Reject(req, nas.SharedSecret, "No username");
 
-        // Detect which auth method the NAS is using
-        bool hasPap      = req.GetAttribute(RadiusAttributeType.UserPassword)  != null;
-        bool hasChap     = req.GetAttribute(RadiusAttributeType.ChapPassword)  != null;
-        bool hasMsChap2  = HasMsChapV2Response(req);
+        bool hasPap     = req.GetAttribute(RadiusAttributeType.UserPassword)  != null;
+        bool hasChap    = req.GetAttribute(RadiusAttributeType.ChapPassword)  != null;
+        bool hasMsChap2 = HasMsChapV2Response(req);
 
-        if (hasMsChap2)   return HandleMsChapV2(req, nas, remote, username);
-        if (hasChap)      return HandleChap(req, nas, remote, username);
-        if (hasPap)       return HandlePap(req, nas, remote, username);
+        if (hasMsChap2) return HandleMsChapV2(req, nas, remote, username);
+        if (hasChap)    return HandleChap(req, nas, remote, username);
+        if (hasPap)     return HandlePap(req, nas, remote, username);
 
         Log($"[AUTH] {username} — unsupported auth method");
-        return Reject(req, secret, "Unsupported auth method");
+        return Reject(req, nas.SharedSecret, "Unsupported auth method");
     }
 
     // ── PAP ───────────────────────────────────────────────────────────────────
@@ -178,120 +183,166 @@ public sealed class RadiusServer : IDisposable
         if (user == null)
             return RejectAndLog(req, nas, remote, username, "PAP", "Invalid credentials");
 
-        return AcceptAndLog(req, nas, remote, user, "PAP");
+        return AcceptWithPolicy(req, nas, remote, user, "PAP");
     }
 
     // ── CHAP ──────────────────────────────────────────────────────────────────
     private RadiusPacket HandleChap(RadiusPacket req, NasClient nas, IPEndPoint remote, string username)
     {
         bool ok = ChapAuthHandler.Authenticate(req, _users, out _, out string reason);
-        if (!ok)
-            return RejectAndLog(req, nas, remote, username, "CHAP", reason);
+        if (!ok) return RejectAndLog(req, nas, remote, username, "CHAP", reason);
 
         var user = _users.Find(username);
         if (user == null || !user.IsEnabled)
             return RejectAndLog(req, nas, remote, username, "CHAP", "User not found or disabled");
 
-        return AcceptAndLog(req, nas, remote, user, "CHAP");
+        return AcceptWithPolicy(req, nas, remote, user, "CHAP");
     }
 
     // ── MSCHAPv2 ──────────────────────────────────────────────────────────────
     private RadiusPacket HandleMsChapV2(RadiusPacket req, NasClient nas, IPEndPoint remote, string username)
     {
-        // Extract MS-CHAP-Challenge (VSA type 11, vendor Microsoft = 311)
-        var authChallenge = GetMsChapChallenge(req);
+        var authChallenge   = GetMsChapChallenge(req);
+        var msChap2Response = GetMsChap2Response(req);
+
         if (authChallenge == null || authChallenge.Length < 16)
             return RejectAndLog(req, nas, remote, username, "MSCHAPv2", "Missing MS-CHAP-Challenge");
-
-        // Extract MS-CHAP2-Response (VSA type 25)
-        var msChap2Response = GetMsChap2Response(req);
         if (msChap2Response == null || msChap2Response.Length < 50)
-            return RejectAndLog(req, nas, remote, username, "MSCHAPv2", "Missing or short MS-CHAP2-Response");
+            return RejectAndLog(req, nas, remote, username, "MSCHAPv2", "Missing MS-CHAP2-Response");
 
-        // MS-CHAP2-Response layout (50 bytes):
-        //  [0]     = Ident
-        //  [1]     = Flags
-        //  [2..17] = PeerChallenge (16 bytes)
-        //  [18..23]= Reserved (6 bytes, zero)
-        //  [24..47]= NT-Response (24 bytes)
         byte[] peerChallenge = msChap2Response[2..18];
         byte[] ntResponse    = msChap2Response[24..48];
 
-        bool ok = MsChapV2Handler.Authenticate(
-            username, authChallenge, peerChallenge, ntResponse,
-            _users, out string authResponse, out string reason);
+        bool ok = MsChapV2Handler.Authenticate(username, authChallenge, peerChallenge,
+                      ntResponse, _users, out string authResponse, out string reason);
 
-        if (!ok)
-            return RejectAndLog(req, nas, remote, username, "MSCHAPv2", reason);
+        if (!ok) return RejectAndLog(req, nas, remote, username, "MSCHAPv2", reason);
 
         var user = _users.Find(username);
         if (user == null || !user.IsEnabled)
             return RejectAndLog(req, nas, remote, username, "MSCHAPv2", "User disabled");
 
-        var accept = BuildAcceptPacket(req, nas.SharedSecret, user);
+        var accept = AcceptWithPolicy(req, nas, remote, user, "MSCHAPv2");
 
-        // Add MS-CHAP2-Success VSA so client can verify the server (mutual auth)
-        byte ident = msChap2Response[0];
-        var successMsg = Encoding.ASCII.GetBytes($"{ident} {authResponse}");
-        accept.Attributes.Add(BuildMicrosoftVsa(26, successMsg));   // MS-CHAP2-Success = type 26
-
-        Interlocked.Increment(ref _totalAccepts);
-        Log($"[AUTH] ACCEPT (MSCHAPv2) — {username} from {remote.Address}  Group={user.Group}  VLAN={user.VlanId}");
-        FireAuthEvent(username, remote, "MSCHAPv2", true, $"Group={user.Group}");
+        // Attach MS-CHAP2-Success for mutual auth
+        byte ident        = msChap2Response[0];
+        var successMsg    = Encoding.ASCII.GetBytes($"{ident} {authResponse}");
+        accept.Attributes.Add(BuildMicrosoftVsa(26, successMsg));
+        accept.SetResponseAuthenticator(req.Authenticator, nas.SharedSecret);
         return accept;
     }
 
-    // ── Accounting ────────────────────────────────────────────────────────────
-    private RadiusPacket HandleAccountingRequest(RadiusPacket req, NasClient nas)
+    // ── Accounting-Request ────────────────────────────────────────────────────
+    private RadiusPacket HandleAccountingRequest(RadiusPacket req, NasClient nas, IPEndPoint remote)
     {
         Interlocked.Increment(ref _totalAccounting);
+
         var statusAttr = req.GetAttribute(RadiusAttributeType.AcctStatusType);
-        string status  = statusAttr?.AsUInt32() switch
+        int statusVal  = (int)(statusAttr?.AsUInt32() ?? 0);
+        var status     = (AcctStatusType)statusVal;
+
+        string sessionId = req.GetAttribute(RadiusAttributeType.AcctSessionId)?.AsString()   ?? "";
+        string username  = req.UserName ?? "";
+        int    seconds   = (int)(req.GetAttribute(RadiusAttributeType.AcctSessionTime)?.AsUInt32() ?? 0);
+        long   inputOct  = (long)(req.GetAttribute(RadiusAttributeType.AcctInputOctets)?.AsUInt32()  ?? 0);
+        long   outputOct = (long)(req.GetAttribute(RadiusAttributeType.AcctOutputOctets)?.AsUInt32() ?? 0);
+
+        try
         {
-            1 => "Start", 2 => "Stop", 3 => "Interim-Update", 7 => "Acct-On", 8 => "Acct-Off",
-            _ => "Unknown"
-        };
-        string sessionId = req.GetAttribute(RadiusAttributeType.AcctSessionId)?.AsString() ?? "-";
-        Log($"[ACCT] {status}  User={req.UserName ?? "(none)"}  Session={sessionId}");
+            switch (status)
+            {
+                case AcctStatusType.Start:
+                    _accounting.SessionStart(new AccountingSession
+                    {
+                        SessionId        = sessionId,
+                        Username         = username,
+                        NasIp            = remote.Address.ToString(),
+                        NasIdentifier    = req.NasIdentifier ?? "",
+                        CalledStationId  = req.GetAttribute(RadiusAttributeType.CalledStationId)?.AsString()  ?? "",
+                        CallingStationId = req.GetAttribute(RadiusAttributeType.CallingStationId)?.AsString() ?? "",
+                        FramedIpAddress  = req.GetAttribute(RadiusAttributeType.FramedIpAddress)?.AsIpString()  ?? "",
+                        StartTime        = DateTime.UtcNow,
+                    });
+                    Log($"[ACCT] Start — User={username}  Session={sessionId}");
+                    break;
+
+                case AcctStatusType.InterimUpdate:
+                    _accounting.SessionInterim(sessionId, seconds, inputOct, outputOct);
+                    Log($"[ACCT] Interim — User={username}  Session={sessionId}  {seconds}s  In={inputOct}  Out={outputOct}");
+                    break;
+
+                case AcctStatusType.Stop:
+                    var causeAttr = req.GetAttribute(RadiusAttributeType.AcctTerminateCause);
+                    var cause     = causeAttr != null ? (TerminateCause)causeAttr.AsUInt32() : TerminateCause.Unknown;
+                    _accounting.SessionStop(sessionId, seconds, inputOct, outputOct, cause);
+                    Log($"[ACCT] Stop — User={username}  Session={sessionId}  {seconds}s  In={inputOct}  Out={outputOct}  Cause={cause}");
+                    break;
+
+                default:
+                    Log($"[ACCT] {status} — User={username}");
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"[ACCT] DB error: {ex.Message}");
+        }
 
         var response = new RadiusPacket { Code = RadiusCode.AccountingResponse, Identifier = req.Identifier };
         response.SetResponseAuthenticator(req.Authenticator, nas.SharedSecret);
         return response;
     }
 
-    // ── Accept / Reject helpers ───────────────────────────────────────────────
-    private RadiusPacket AcceptAndLog(RadiusPacket req, NasClient nas, IPEndPoint remote, UserEntry user, string method)
+    // ── Accept with policy override ───────────────────────────────────────────
+    private RadiusPacket AcceptWithPolicy(RadiusPacket req, NasClient nas,
+                                          IPEndPoint remote, UserEntry user, string method)
     {
+        // Run policy engine — may override user's VLAN/timeout
+        var policy = _policy.Evaluate(user.Username, user.Group, remote.Address.ToString());
+
+        // Policy can force a reject
+        if (policy.Matched && policy.Reject)
+            return RejectAndLog(req, nas, remote, user.Username, method,
+                                $"Rejected by policy: {policy.MatchedRule?.Name}");
+
+        int    vlan    = policy.Matched && policy.VlanId > 0 ? policy.VlanId : user.VlanId;
+        int    timeout = policy.Matched && policy.SessionTimeoutSecs > 0
+                             ? policy.SessionTimeoutSecs : user.SessionTimeoutSeconds;
+        int    idle    = policy.Matched ? policy.IdleTimeoutSecs : 0;
+        string reply   = policy.Matched && !string.IsNullOrEmpty(policy.ReplyMessage)
+                             ? policy.ReplyMessage : $"Welcome, {user.Username}!";
+
+        string policyLabel = policy.Matched ? $" Policy={policy.MatchedRule?.Name}" : "";
         Interlocked.Increment(ref _totalAccepts);
-        Log($"[AUTH] ACCEPT ({method}) — {user.Username} from {remote.Address}  Group={user.Group}  VLAN={user.VlanId}");
+        Log($"[AUTH] ACCEPT ({method}) — {user.Username} from {remote.Address}  Group={user.Group}  VLAN={vlan}{policyLabel}");
         FireAuthEvent(user.Username, remote, method, true, $"Group={user.Group}");
-        return BuildAcceptPacket(req, nas.SharedSecret, user);
+
+        var accept = new RadiusPacket { Code = RadiusCode.AccessAccept, Identifier = req.Identifier };
+        accept.Attributes.Add(new(RadiusAttributeType.ReplyMessage, reply));
+
+        if (vlan > 0)
+        {
+            accept.Attributes.Add(new(RadiusAttributeType.TunnelType,           (uint)13));
+            accept.Attributes.Add(new(RadiusAttributeType.TunnelMediumType,     (uint)6));
+            accept.Attributes.Add(new(RadiusAttributeType.TunnelPrivateGroupId, vlan.ToString()));
+        }
+        if (timeout > 0)
+            accept.Attributes.Add(new(RadiusAttributeType.SessionTimeout, (uint)timeout));
+        if (idle > 0)
+            accept.Attributes.Add(new(RadiusAttributeType.IdleTimeout, (uint)idle));
+
+        accept.SetResponseAuthenticator(req.Authenticator, nas.SharedSecret);
+        return accept;
     }
 
-    private RadiusPacket RejectAndLog(RadiusPacket req, NasClient nas, IPEndPoint remote, string username, string method, string reason)
+    // ── Reject helpers ────────────────────────────────────────────────────────
+    private RadiusPacket RejectAndLog(RadiusPacket req, NasClient nas, IPEndPoint remote,
+                                      string username, string method, string reason)
     {
         Interlocked.Increment(ref _totalRejects);
         Log($"[AUTH] REJECT ({method}) — {username} from {remote.Address} — {reason}");
         FireAuthEvent(username, remote, method, false, reason);
         return Reject(req, nas.SharedSecret, reason);
-    }
-
-    private RadiusPacket BuildAcceptPacket(RadiusPacket req, string secret, UserEntry user)
-    {
-        var accept = new RadiusPacket { Code = RadiusCode.AccessAccept, Identifier = req.Identifier };
-        accept.Attributes.Add(new(RadiusAttributeType.ReplyMessage, $"Welcome, {user.Username}!"));
-
-        if (user.VlanId > 0)
-        {
-            accept.Attributes.Add(new(RadiusAttributeType.TunnelType,            (uint)13));
-            accept.Attributes.Add(new(RadiusAttributeType.TunnelMediumType,      (uint)6));
-            accept.Attributes.Add(new(RadiusAttributeType.TunnelPrivateGroupId,  user.VlanId.ToString()));
-        }
-        if (user.SessionTimeoutSeconds > 0)
-            accept.Attributes.Add(new(RadiusAttributeType.SessionTimeout, (uint)user.SessionTimeoutSeconds));
-
-        accept.SetResponseAuthenticator(req.Authenticator, secret);
-        return accept;
     }
 
     private RadiusPacket Reject(RadiusPacket req, string secret, string reason)
@@ -305,30 +356,15 @@ public sealed class RadiusServer : IDisposable
     private void FireAuthEvent(string username, IPEndPoint remote, string method, bool accepted, string reason)
         => OnAuthEvent?.Invoke(this, new AuthEventArgs
         {
-            Username  = username,
-            NasIp     = remote.Address.ToString(),
-            Method    = method,
-            Accepted  = accepted,
-            Reason    = reason,
+            Username = username, NasIp = remote.Address.ToString(),
+            Method = method, Accepted = accepted, Reason = reason,
         });
 
-    // ── VSA (Vendor-Specific Attribute) helpers ───────────────────────────────
-    // Microsoft Vendor-ID = 311
+    // ── VSA helpers ───────────────────────────────────────────────────────────
+    private static bool HasMsChapV2Response(RadiusPacket pkt) => GetMsChap2Response(pkt) != null;
+    private static byte[]? GetMsChapChallenge(RadiusPacket pkt) => GetMicrosoftVsa(pkt, 11);
+    private static byte[]? GetMsChap2Response(RadiusPacket pkt) => GetMicrosoftVsa(pkt, 25);
 
-    private static bool HasMsChapV2Response(RadiusPacket pkt)
-        => GetMsChap2Response(pkt) != null;
-
-    private static byte[]? GetMsChapChallenge(RadiusPacket pkt)
-        => GetMicrosoftVsa(pkt, 11);   // MS-CHAP-Challenge = Microsoft VSA type 11
-
-    private static byte[]? GetMsChap2Response(RadiusPacket pkt)
-        => GetMicrosoftVsa(pkt, 25);   // MS-CHAP2-Response = Microsoft VSA type 25
-
-    /// <summary>
-    /// Parse a Microsoft VSA from a Vendor-Specific attribute.
-    /// Vendor-Specific wire format:
-    ///   Type=26, Length, Vendor-Id(4), Vendor-Type(1), Vendor-Length(1), Value
-    /// </summary>
     private static byte[]? GetMicrosoftVsa(RadiusPacket pkt, byte vsaType)
     {
         foreach (var attr in pkt.GetAttributes(RadiusAttributeType.VendorSpecific))
@@ -336,20 +372,18 @@ public sealed class RadiusServer : IDisposable
             var v = attr.Value;
             if (v.Length < 6) continue;
             uint vendorId = (uint)((v[0] << 24) | (v[1] << 16) | (v[2] << 8) | v[3]);
-            if (vendorId != 311) continue;                   // Microsoft
-            if (v[4] != vsaType) continue;
-            int  vsaLen = v[5] - 2;
+            if (vendorId != 311 || v[4] != vsaType) continue;
+            int vsaLen = v[5] - 2;
             if (vsaLen <= 0 || 6 + vsaLen > v.Length) continue;
             return v[6..(6 + vsaLen)];
         }
         return null;
     }
 
-    /// <summary>Build a Vendor-Specific attribute for Microsoft (Vendor-ID 311).</summary>
     private static RadiusAttribute BuildMicrosoftVsa(byte vsaType, byte[] value)
     {
         var data = new byte[4 + 1 + 1 + value.Length];
-        data[0] = 0; data[1] = 0; data[2] = 0x01; data[3] = 0x37;   // Vendor-ID 311
+        data[0] = 0; data[1] = 0; data[2] = 0x01; data[3] = 0x37;
         data[4] = vsaType;
         data[5] = (byte)(2 + value.Length);
         Buffer.BlockCopy(value, 0, data, 6, value.Length);

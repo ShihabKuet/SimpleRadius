@@ -3,6 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
+        <!-- Global app icon — shows in taskbar, Alt+Tab, and title bar -->
+        <BitmapImage x:Key="AppIcon" UriSource="Resources/app.png"/>
 
         <!-- ── Color palette ─────────────────────────────────────────────── -->
         <Color x:Key="SidebarBg">#0F1923</Color>
