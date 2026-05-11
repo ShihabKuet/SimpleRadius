@@ -30,6 +30,7 @@ public enum RadiusAttributeType : byte
     FramedIpAddress       = 8,
     FramedIpNetmask       = 9,
     ReplyMessage          = 18,
+    ChapChallenge         = 60,   // explicit CHAP challenge (RFC 2865 §5.40)
     State                 = 24,
     SessionTimeout        = 27,
     IdleTimeout           = 28,
@@ -47,6 +48,7 @@ public enum RadiusAttributeType : byte
     TunnelPrivateGroupId  = 81,
     EapMessage            = 79,
     MessageAuthenticator  = 80,
+    VendorSpecific        = 26,   // RFC 2865 §5.26 — carries MSCHAPv2/Microsoft VSAs
 }
 
 // ── Single RADIUS attribute (Type-Length-Value) ───────────────────────────────
