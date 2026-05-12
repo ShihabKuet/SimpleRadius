@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Text;
 using SimpleRadius.Core.Accounting;
 using SimpleRadius.Core.Auth;
+using SimpleRadius.Core.Billing;
 using SimpleRadius.Core.Models;
 using SimpleRadius.Core.Policy;
 using SimpleRadius.Core.Protocol;
@@ -38,6 +39,7 @@ public sealed class RadiusServer : IDisposable
     private readonly NasStore           _nas;
     private readonly AccountingStore    _accounting;
     private readonly PolicyEngine       _policy;
+    private readonly BillingService     _billing;
     private readonly IRadiusLogger      _logger;
 
     private UdpClient?               _authSocket;
@@ -69,6 +71,7 @@ public sealed class RadiusServer : IDisposable
     public NasStore        Nas        => _nas;
     public AccountingStore Accounting => _accounting;
     public PolicyEngine    Policy     => _policy;
+    public BillingService  Billing    => _billing;
 
     // ── Constructor ───────────────────────────────────────────────────────────
     public RadiusServer(RadiusServerConfig config, IRadiusLogger? logger = null)
@@ -80,6 +83,7 @@ public sealed class RadiusServer : IDisposable
         _nas        = new NasStore(Path.Combine(config.DataDir,  "nas.json"));
         _accounting = new AccountingStore(config.DataDir);
         _policy     = new PolicyEngine(config.DataDir);
+        _billing    = new BillingService(_accounting, _users);
     }
 
     // ── Start / Stop ──────────────────────────────────────────────────────────
@@ -304,6 +308,11 @@ public sealed class RadiusServer : IDisposable
         if (policy.Matched && policy.Reject)
             return RejectAndLog(req, nas, remote, user.Username, method,
                                 $"Rejected by policy: {policy.MatchedRule?.Name}");
+
+        // Quota enforcement — reject if user exceeded data or time limit
+        if (_billing.IsQuotaExceeded(user.Username))
+            return RejectAndLog(req, nas, remote, user.Username, method,
+                                "Quota exceeded — billing limit reached");
 
         int    vlan    = policy.Matched && policy.VlanId > 0 ? policy.VlanId : user.VlanId;
         int    timeout = policy.Matched && policy.SessionTimeoutSecs > 0

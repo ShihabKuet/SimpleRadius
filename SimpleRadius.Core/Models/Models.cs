@@ -1,36 +1,36 @@
 namespace SimpleRadius.Core.Models;
 
-// ── Local user account ────────────────────────────────────────────────────────
 public sealed class UserEntry
 {
     public string  Username     { get; set; } = "";
-
-    /// <summary>
-    /// Phase 1 legacy plain-text field. Kept for JSON migration only.
-    /// After first successful auth this is cleared and PasswordHash is populated.
-    /// Never use this directly — call UserStore.Authenticate() instead.
-    /// </summary>
     public string  Password     { get; set; } = "";
-
-    /// <summary>bcrypt hash of the password. Used for PAP verification.</summary>
     public string  PasswordHash { get; set; } = "";
-
-    /// <summary>
-    /// Hex-encoded NT Hash (MD4 of UTF-16LE password).
-    /// Used for CHAP and MSCHAPv2 verification.
-    /// </summary>
     public string  NtHash       { get; set; } = "";
-
     public string  Group        { get; set; } = "default";
     public int     VlanId       { get; set; } = 0;
     public bool    IsEnabled    { get; set; } = true;
     public string? Description  { get; set; }
     public int     SessionTimeoutSeconds { get; set; } = 0;
 
+    // ── Billing / Quota ───────────────────────────────────────────────────────
+    /// <summary>Monthly data download quota in MB. 0 = unlimited.</summary>
+    public long DataQuotaMb      { get; set; } = 0;
+
+    /// <summary>Monthly session time quota in hours. 0 = unlimited.</summary>
+    public int  TimeQuotaHours   { get; set; } = 0;
+
+    /// <summary>Day of month the billing cycle resets (1–28). Default = 1.</summary>
+    public int  BillingCycleDay  { get; set; } = 1;
+
+    /// <summary>Price per GB in local currency (for report display only).</summary>
+    public decimal PricePerGb    { get; set; } = 0;
+
+    /// <summary>Price per hour in local currency (for report display only).</summary>
+    public decimal PricePerHour  { get; set; } = 0;
+
     public override string ToString() => $"{Username} [{Group}] VLAN={VlanId} Enabled={IsEnabled}";
 }
 
-// ── NAS (Network Access Server) client ───────────────────────────────────────
 public sealed class NasClient
 {
     public string  Name         { get; set; } = "";
@@ -38,7 +38,6 @@ public sealed class NasClient
     public string  SharedSecret { get; set; } = "";
     public string  Vendor       { get; set; } = "Generic";
     public string? Description  { get; set; }
-
     public override string ToString() => $"{Name} ({IpAddress}) [{Vendor}]";
 }
 
